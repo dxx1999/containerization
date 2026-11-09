@@ -1,0 +1,54 @@
+name: Blob download regression
+
+on:
+  push:
+    branches:
+      - p/dxx1999/validate-cancelled-blob-file-handles
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: macos-15
+    timeout-minutes: 20
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+      - uses: actions/cache@v4
+        with:
+          path: OCIValidation/.build
+          key: macos-15-xcode-26.3-oci-locked-v1
+      - name: Link repository sources
+        run: |
+          mkdir -p OCIValidation/Sources OCIValidation/Tests/ContainerizationOCITests
+          for target in CShim ContainerizationError ContainerizationOS ContainerizationExtras ContainerizationOCI; do
+            ln -s "../../Sources/$target" "OCIValidation/Sources/$target"
+          done
+          for test in MockRegistryServer RegistryClientDownloadTests RegistryClientDigestVerificationTests; do
+            ln -s "../../../Tests/ContainerizationOCITests/$test.swift" "OCIValidation/Tests/ContainerizationOCITests/$test.swift"
+          done
+          cp Package.resolved OCIValidation/Package.resolved
+          xcodebuild -version
+          swift --version
+          xcrun --show-sdk-version
+      - name: Run real HTTP download and digest tests
+        working-directory: OCIValidation
+        run: |
+          set -o pipefail
+          swift test -Xswiftc -warnings-as-errors 2>&1 | tee validation.log
+      - name: Preserve build cache after failed regression
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: OCIValidation/.build
+          key: macos-15-xcode-26.3-oci-locked-v1
+      - name: Save validation log and resolved dependencies
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-download-validation
+          path: |
+            OCIValidation/validation.log
+            OCIValidation/Package.resolved

@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   regression:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 20
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
@@ -19,7 +19,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: OCIValidation/.build
-          key: macos-15-xcode-26.3-oci-locked-v1
+          key: macos-26-xcode-26.3-oci-locked-v1
       - name: Link repository sources
         run: |
           mkdir -p OCIValidation/Sources OCIValidation/Tests/ContainerizationOCITests
@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: OCIValidation/.build
-          key: macos-15-xcode-26.3-oci-locked-v1
+          key: macos-26-xcode-26.3-oci-locked-v1
       - name: Save validation log and resolved dependencies
         if: always()
         uses: actions/upload-artifact@v4
